@@ -1,11 +1,19 @@
-# Dynatrace - Criação manual do Secret `dynatrace-metadata-enrichment-endpoint`
+# Dynatrace - Criação manual de Secrets para evitar erros de MountVolume
 
-Este documento descreve como criar manualmente o Secret `dynatrace-metadata-enrichment-endpoint` com conteúdo válido, útil em casos onde:
+Este documento descreve como criar manualmente os Secrets utilizados pelo Dynatrace em ambientes onde o **OneAgent é instalado diretamente nos nodes** (sem Operator). Serve para:
 
-- O Dynatrace OneAgent foi instalado diretamente nos nodes (sem Operator);
-- Os Pods referenciam o volume `metadata-enrichment-endpoint`, mas o Secret não existe;
-- Você deseja parar os erros `MountVolume.SetUp failed` na UI da Dynatrace;
-- Ou deseja simular o comportamento correto de enriquecimento de metadados sem usar o Operator.
+- Eliminar erros como `MountVolume.SetUp failed` visíveis na UI do Dynatrace;
+- Evitar ruído causado por volumes que tentam montar Secrets que não existem;
+- Preparar o ambiente para compatibilidade futura com o Dynatrace Operator (se for adotado).
+
+---
+
+## Secret 1: `dynatrace-metadata-enrichment-endpoint`
+
+### Quando é necessário?
+
+- Quando os Pods montam o volume `metadata-enrichment-endpoint`, mas o Secret não existe.
+- Mesmo que o OneAgent esteja no node, o erro aparece na UI da Dynatrace.
 
 ---
 
@@ -19,20 +27,17 @@ Crie um arquivo chamado `enrichment.json` com o seguinte conteúdo:
   "cluster.id": "SEU-ID",
   "cluster.name": "productionk8s"
 }
-
 ```
 
-<strong> enrichment.endpoint:</strong> URL interna do serviço de enriquecimento do Dynatrace Operator.
+**enrichment.endpoint:** URL interna do serviço de enriquecimento do Dynatrace Operator.  
+**cluster.id:** Identificador único do cluster (UUID ou nome único).  
+**cluster.name:** Nome amigável exibido na UI do Dynatrace.
 
-<strong>cluster.id:</strong> Identificador único do cluster (pode ser um UUID ou string).
-
-<strong>cluster.name:</strong> Nome amigável que será exibido na UI Dynatrace.
+---
 
 ## 2. Executar script PowerShell para aplicar o Secret nos namespaces necessários
 
-Este script localiza todos os namespaces onde há Pods que referenciam o Secret e aplica o enrichment.json corretamente em todos eles:
-
-```ps1 
+```powershell
 # Caminhos personalizados
 $kubectl = ".\kubectl.exe"
 $kubeconfig = "--kubeconfig=.\kubeconfig-production.yaml"
@@ -62,28 +67,86 @@ foreach ($ns in $namespaces) {
 }
 ```
 
-## Observações
+---
 
-* Não causa indisponibilidade nos Pods.
-* Corrige os erros de volume mount reportados no Dynatrace.
-* Simula o comportamento esperado quando não se utiliza o Dynatrace Operator.
-* Caso venha a usar o Operator futuramente, ele substituirá esse Secret automaticamente com os valores corretos.
+## Secret 2: `dynatrace-dynakube-config`
 
-## Verificar Secrets criados 
-Após a execução, você pode verificar:
+### Quando é necessário?
 
-```bash 
-kubectl get secrets --all-namespaces -o jsonpath='{range .items[?(@.metadata.name=="dynatrace-metadata-enrichment-endpoint")]}{.metadata.namespace}{"\n"}{end}'
+- Quando o erro abaixo aparece na UI do Dynatrace:
+  ```
+  MountVolume.SetUp failed for volume "injection-config" : secret "dynatrace-dynakube-config" not found
+  ```
+- Esse Secret é usado apenas quando o Dynatrace Operator está ativo com injeção automática.  
+- **Se você não usa o Operator, basta criar um dummy.**
+
+---
+
+### Script PowerShell para criar Secret dummy:
+
+```powershell
+# Configurações
+$kubectl = ".\kubectl.exe"
+$kubeconfig = "--kubeconfig=.\kubeconfig-production.yaml"
+$secretName = "dynatrace-dynakube-config"
+$tempFile = "$env:TEMP\dummy-injection.json"
+
+# Cria JSON dummy
+"{}" | Out-File -Encoding ASCII $tempFile
+
+# Buscar todos os Pods
+$podsJson = & $kubectl get pods --all-namespaces -o json $kubeconfig | ConvertFrom-Json
+
+# Identificar namespaces que referenciam o Secret
+$namespaces = $podsJson.items |
+    Where-Object {
+        $_.spec.volumes -ne $null -and
+        $_.spec.volumes.secret.secretName -eq $secretName
+    } |
+    Select-Object -ExpandProperty metadata |
+    Select-Object -ExpandProperty namespace -Unique
+
+# Criar o Secret dummy em cada namespace
+foreach ($ns in $namespaces) {
+    Write-Host "`nCriando Secret dummy '$secretName' em: $ns"
+    & $kubectl create secret generic $secretName `
+        --from-file="dummy.json=$tempFile" `
+        -n $ns `
+        $kubeconfig `
+        --dry-run=client -o yaml | & $kubectl apply -f - $kubeconfig
+}
+
+Remove-Item $tempFile
 ```
 
+---
+
+##  Verificar se os Secrets foram criados
+
+```bash
+kubectl get secrets --all-namespaces | grep dynatrace
+```
+
+---
+
+## Impacto operacional
+
+✅ **Seguro**: Nenhum Pod é reiniciado nem afetado por essa ação.  
+✅ **Sem downtime**: O Kubernetes não remonta volumes nem interfere em containers em execução.  
+✅ **Solução definitiva**: Os erros desaparecem da UI Dynatrace e o cluster fica mais limpo.
+
+---
+
+## Resultado esperado
+
+- Erros de `MountVolume.SetUp failed` desaparecem da UI da Dynatrace.
+- Nenhuma aplicação é impactada.
+- Ambiente mais limpo, silencioso e compatível com futuras integrações.
+
+---
+
 ## Requisitos
-* kubectl configurado corretamente com acesso ao cluster.
-* enrichment.json salvo localmente.
-* PowerShell instalado (ambiente Windows).
-* (Opcional) Dynatrace Operator rodando se quiser que o endpoint seja realmente funcional.
 
-## Resultado Esperado
-* Erros de volume mount deixam de aparecer.
-* Se OneAgent estiver injetado dentro dos Pods, ele consegue ler metadados.
-* Ambiente mais limpo e pronto para futuras integrações com o Operator.
-
+- `kubectl` configurado e com acesso ao cluster
+- PowerShell (ambiente Windows)
+- Scripts executados com permissão de criação de Secrets nos namespaces relevantes
