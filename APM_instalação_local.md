@@ -3,40 +3,41 @@
 
 ## 1) Valide se está liberado a porta 443 do lado dos nodes Kubernetes, e a porta 9999 no ActiveGate  
 
-<img width="439" height="103" alt="image" src="https://github.com/user-attachments/assets/9d589a30-69e0-4cc0-84db-d8f59ccd7340" />
+<img width="658" height="152" alt="image" src="https://github.com/user-attachments/assets/9fb2413e-8f11-45f7-b679-d897c6567e99" />
 
 ## 2) Faça a instalação do OneAgent direto nos nós 
 
 <p>Para isso vamos gerar o instalador na console UI</p>
 
-<img width="460" height="278" alt="Captura de tela 2025-07-29 191610" src="https://github.com/user-attachments/assets/d89efdb3-b219-4fd2-8f23-1963dd1f557e" />
+<img width="688" height="416" alt="image" src="https://github.com/user-attachments/assets/843bd8df-81ea-47b6-b4ee-287cf6038eb4" />
+
 <br><br>
 <strong> ⚠️ Aqui será necessário que você gere um token com as devidas permissões habilitadas </strong>
 <br><br>
-<img width="478" height="406" alt="Captura de tela 2025-07-29 193001" src="https://github.com/user-attachments/assets/6bdccbf2-0e8d-42c3-8bda-feb47b7af53d" />
+<img width="499" height="425" alt="image" src="https://github.com/user-attachments/assets/1b64f2f3-c51c-41a6-9a8e-d01f466f846d" />
 <br><br>
 
 <strong> Em "Access Tokens" clique em "Generate access token"</strong>
 <br><br>
-<img width="1094" height="458" alt="image" src="https://github.com/user-attachments/assets/67c79d57-d235-4d3e-aa69-476c7bb20a14" />
+<img width="946" height="404" alt="image" src="https://github.com/user-attachments/assets/261fd34d-3bb1-4a45-b9b3-4e5e32f7992f" />
 <br><br>
 <p> Você vai criar seu token, não coloque data de expiração para esse token expecífico. Marque todas as permissões necessárias para o OneAgent. </p>
 <br>
 <strong> Depois de validar se está tudo certo, clique em "Generate Token".</strong>
 <br><br>
-<img width="284" height="74" alt="Captura de tela 2025-07-29 194110" src="https://github.com/user-attachments/assets/f1933fa5-2dd7-43f7-a7d9-c35a57ad2d61" />
+<img width="428" height="110" alt="image" src="https://github.com/user-attachments/assets/505c6b34-9447-4b52-ac3c-6d0750c08c77" />
 <br><br>
 <strong> Copie o token gerado e cole em um local de segurança, vamos precisar dele para a próxima parte.</strong>
 <br><br> 
-<img width="920" height="276" alt="Captura de tela 2025-07-29 194503" src="https://github.com/user-attachments/assets/3d1189fe-26a1-435d-83ea-aaa1ac9a2dad" />
+<img width="968" height="299" alt="image" src="https://github.com/user-attachments/assets/378aab6b-0938-4a7c-9a83-1c61109aca3f" />
 <br><br>
 <strong> Volte a aba "Download Dynatrace OneAgent for Linux", vamos inserir o token que acabamos de criar.</strong>
 <br><br> 
-<img width="497" height="407" alt="Captura de tela 2025-07-29 195459" src="https://github.com/user-attachments/assets/4e089d67-29a4-47ab-9ada-ef3218cce789" />
+<img width="496" height="406" alt="image" src="https://github.com/user-attachments/assets/72560338-5054-4f11-9827-5923f133364e" />
 <br><br> 
 <strong> Após inserir, scrole com o mouse para baixo, você vai ver três passos que precisam ser feito do lado do Sistema operacional lá nos nodes. </strong>
 <br><br> 
-<img width="432" height="328" alt="image" src="https://github.com/user-attachments/assets/25199c1b-2e50-4189-bfb8-146c2bb4acb6" />
+<img width="539" height="408" alt="image" src="https://github.com/user-attachments/assets/18cde36c-2007-4102-8d2e-9769b97d9ead" />
 <br><br> 
 
 <strong> 2. Download do instalador:</strong>
@@ -54,7 +55,7 @@
 
 <strong> Depois desse processo realizado em todos os nodes você já deve começar a visualizar os hosts na console UI </strong>
 <br><br>
-<img width="1084" height="325" alt="Captura de tela 2025-07-29 200722" src="https://github.com/user-attachments/assets/f714ec45-826f-4d6e-82b3-c666c65756a0" />
+<img width="1078" height="335" alt="image" src="https://github.com/user-attachments/assets/ca94414e-d8a1-42f9-a914-ada5840963fc" />
 <br><br>
 
 ## 3) Parte Kubernetes 
@@ -110,13 +111,13 @@ kubectl create secret generic productionk8s \
 kubectl get crd dynakubes.dynatrace.com -o=jsonpath='{.spec.versions[*].name}'
 ```
 <br> 
-<img width="295" height="51" alt="image" src="https://github.com/user-attachments/assets/7cc04a89-9704-4391-8e0e-893d805138ee" />
+<img width="354" height="59" alt="image" src="https://github.com/user-attachments/assets/7c56c98f-6a10-4b7c-a11d-27a645c16b74" />
 
 
 #### Configuração do Dynakube 
 
 ```yaml
-apiVersion: dynatrace.com/v1beta1
+apiVersion: dynatrace.com/v1beta5
 kind: DynaKube
 metadata:
   name: productionk8s
@@ -256,11 +257,11 @@ ou:
 .\kubectl.exe --kubeconfig=.\kubeconfig-homolog.yaml get ns --show-labels | findstr "dynatrace.com/inject=true"
 ```
 
-<img width="746" height="154" alt="image" src="https://github.com/user-attachments/assets/8e3f2576-235a-4067-91ce-69a86e066ae0" />
+<img width="842" height="173" alt="image" src="https://github.com/user-attachments/assets/c40f43d0-9834-4a2c-8651-f4fb13207ba7" />
 
 #### Deep Monitoring 
 
 <strong> ⚠️ Um ponto importante não esqueça de habilitar o "Deep Monitoring" na console UI, se faz necessário para que funcione os traces distribuídos </strong>
 <br>
-<img width="608" height="366" alt="Captura de tela 2025-07-29 211540" src="https://github.com/user-attachments/assets/116f7175-e4ca-4ce5-a601-3516a6ae9b01" />
+<img width="632" height="388" alt="image" src="https://github.com/user-attachments/assets/91f5cefa-9c98-451a-815c-fff3030b7879" />
 
