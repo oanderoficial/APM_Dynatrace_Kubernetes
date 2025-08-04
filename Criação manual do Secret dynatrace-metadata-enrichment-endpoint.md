@@ -73,7 +73,7 @@ foreach ($ns in $namespaces) {
 Após a execução, você pode verificar:
 
 ```bash 
-kubectl get secret dynatrace-metadata-enrichment-endpoint --all-namespaces
+kubectl get secrets --all-namespaces -o jsonpath='{range .items[?(@.metadata.name=="dynatrace-metadata-enrichment-endpoint")]}{.metadata.namespace}{"\n"}{end}'
 ```
 
 ## Requisitos
