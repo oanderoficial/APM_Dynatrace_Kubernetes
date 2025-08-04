@@ -1,0 +1,6 @@
+{
+  "enrichment.endpoint": "https://dynatrace-kubernetes-monitoring.dynatrace.svc.cluster.local/api",
+  "cluster.id": "SEU_ID",
+  "cluster.name": "productionk8s"
+}
+
